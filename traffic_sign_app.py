@@ -22,6 +22,14 @@ transform = transforms.Compose([
 st.title("Traffic Sign Recognition")
 uploaded_image = st.file_uploader("Upload an image", type=["jpg", "png"])
 
+
+# Define the device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Load model to device
+model = model.to(device)
+
+
 if uploaded_image is not None:
     image = Image.open(uploaded_image)
     image = transform(image).unsqueeze(0)
