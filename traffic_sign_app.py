@@ -10,7 +10,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load model
 model = models.resnet18(weights=None)  # 'pretrained' is deprecated; use 'weights'
 model.fc = nn.Linear(model.fc.in_features, 43)  # Modify for GTSRB classes
-model.load_state_dict(torch.load("traffic_sign_model_resnet18.pth", map_location=device))  # Load model weights
+model.load_state_dict(torch.load("traffic_sign_model_resnet18.pth"))  # Load model weights
 model = model.to(device)
 model.eval()
 
