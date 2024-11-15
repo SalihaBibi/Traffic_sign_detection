@@ -1,47 +1,40 @@
 import streamlit as st
-from PIL import Image
 import torch
-from torchvision import transforms, models
-import torch.nn as nn
-import os
+from torchvision import transforms
+from PIL import Image
 
-# Define device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Load model if file exists
-model_path = "traffic_sign_model_resnet18.pth"
-if os.path.exists(model_path):
-    # Define and load the model
-    model = models.resnet18(weights=None)  # No pre-trained weights
-    model.fc = nn.Linear(model.fc.in_features, 43)  # Adjust final layer for 43 classes
-    model.load_state_dict(torch.load(model_path, map_location=device))  # Load model weights
-    model = model.to(device)
-    model.eval()
-else:
-    st.error(f"Model file '{model_path}' not found. Please ensure the file is in the correct directory.")
-
-# Define image transformations
+# Define the transformation for preprocessing
 transform = transforms.Compose([
     transforms.Resize((64, 64)),
     transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))
 ])
 
-# Streamlit UI for uploading an image and making a prediction
-st.title("Traffic Sign Recognition")
-uploaded_image = st.file_uploader("Upload an image", type=["jpg", "png"])
+# Load the model
+model = models.resnet18()  # Initialize model architecture
+model.fc = torch.nn.Linear(model.fc.in_features, 43)  # Update for 43 classes
+model.load_state_dict(torch.load("traffic_sign_model.pth"))
+model.eval()
 
-if uploaded_image is not None:
-    image = Image.open(uploaded_image)
-    st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
+# Define class labels
+class_labels = {0: "Speed Limit 20", 1: "Speed Limit 30", ..., 42: "End of No Passing for Vehicles over 3.5T"}
 
-    # Only run prediction if model loaded successfully
-    if 'model' in locals():
-        # Preprocess the image
-        image = transform(image).unsqueeze(0).to(device)
+# Streamlit app
+st.title("Traffic Sign Detection")
+st.write("Upload an image to classify the traffic sign!")
 
-        # Make prediction
-        with torch.no_grad():
-            outputs = model(image)
-            _, predicted = torch.max(outputs, 1)
-            st.write(f"Predicted Class: {predicted.item()}")
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
+
+if uploaded_file is not None:
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Uploaded Image.", use_column_width=True)
+
+    # Preprocess the image
+    image_tensor = transform(image).unsqueeze(0)  # Transform and add batch dimension
+
+    # Make prediction
+    with torch.no_grad():
+        outputs = model(image_tensor)
+        predicted_class_index = torch.argmax(outputs, 1).item()  # Get index
+        predicted_class_label = class_labels[predicted_class_index]  # Map to label
+
+    st.write(f"Predicted Traffic Sign: {predicted_class_label}")
